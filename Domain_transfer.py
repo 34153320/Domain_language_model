@@ -24,36 +24,53 @@ def bytes_to_unicode():
     cs = [chr(n) for n in cs]
     
     return dict(zip(bs, cs))
-
+  
+ def byte_decoder():
+     """
+        Reversion of bytes_to_unicode
+     """
+     return {v:k for k, v in bytes_to_unicode().items()}
+     
 def decode(tokens, decoder):
     """
        Input digit tokens index the word sequences. tokens: int
        decoder is the dictionary using index as key and word as the value.
     """
   #  byte_encoder = bytes_to_unicode()
-    byte_decoder = {v:k for k, v in bytes_to_unicode().items()}
+    byte_decoder = byte_decoder()
     text = ''.join(decoder[token] for token in tokens)
     text = bytearray([byte_decoder[c] for c in text]).decode('utf-8', errors="replace")
     
     return text 
 
-# load the original encoder dict
-encoder_path = "./models/encoder.json"
-with open(encoder_path, 'r') as read_file:
-     encoder_dict = json.load(read_file)
+def create_domain_dict(encoder_path, domain_dict):
+   # load the original encoder dict
+   # encoder_path = "./models/encoder.json"
+   with open(encoder_path, 'r') as read_file:
+          encoder_dict = json.load(read_file)
+   
+  # create reduced_decoder
+   reduced_dict = {}
+   byte_decoder = byte_decoder()
+   for sub_text in domain_dict:
+       for keys, index_seq in encoder_dict.items():
+           keys = bytearray([byte_decoder[c] for c in keys]).decode('utf-8', errors='replace')
+           if sub_text == keys or sub_text.lower()==keys or \
+              (" " + sub_text==keys) or (" " + sub_text.lower()==keys):
+              reduced_dict[index_seq] = keys
+  
+   return reduced_dict
+  
+   #domain dictionary
+#    domain_dict = ["I", "You",  "My",  "They",  "It",  "Am", "Are", "Need", "Feel", "Is",  "Hungry",  
+#                "Help", "Tired", "Not", "How", "Okay", "Very", "Thirsty", "Comfortable", "Right",
+#                "Please", "Hope", "Clean", "Glasses", "Nurse", "Closer", "Bring", "What", "Where", 
+#                "Tell", "That", "Going", "Music", "Like", "Outside", "Do", "Have", "Faith", 
+#                "Success", "Coming", "Good", "Bad", "Here", "Family", "Hello", "Goodbye", 
+#                "Computer", "Yes", "Up", "No"]
 
-#domain dictionary
-domain_dict = ["I", "You",  "My",  "They",  "It",  "Am", "Are", "Need", "Feel", "Is",  "Hungry",  
-               "Help", "Tired", "Not", "How", "Okay", "Very", "Thirsty", "Comfortable", "Right",
-               "Please", "Hope", "Clean", "Glasses", "Nurse", "Closer", "Bring", "What", "Where", 
-               "Tell", "That", "Going", "Music", "Like", "Outside", "Do", "Have", "Faith", 
-               "Success", "Coming", "Good", "Bad", "Here", "Family", "Hello", "Goodbye", 
-               "Computer", "Yes", "Up", "No"]
-
-# create reduced_decoder
 
 
 
 
 
-# create reduced_decoder

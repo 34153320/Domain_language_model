@@ -1,5 +1,5 @@
 import tensorflow as tf
-import model
+import Transformer
 
 """
    Written by Pengfei Sun. Part of the codes are borrowed from xxxx.
@@ -32,11 +32,11 @@ def sample_sequence(*, hparams, length, start_token=None, batch_size=None, conte
         context = tf.fill([batch_size, 1], start_token)
 
     def step(hparams, tokens, past=None):
-        lm_output = model.model(hparams=hparams, X=tokens, past=past, reuse=tf.AUTO_REUSE)
+        lm_output = Transformer.model(hparams=hparams, X=tokens, past=past, reuse=tf.AUTO_REUSE)
 
         logits = lm_output['logits'][:, :, :hparams.n_vocab]
         presents = lm_output['present']
-        presents.set_shape(model.past_shape(hparams=hparams, batch_size=batch_size))
+        presents.set_shape(Transformer.past_shape(hparams=hparams, batch_size=batch_size))
         return {
             'logits': logits,
             'presents': presents,
@@ -67,7 +67,7 @@ def sample_sequence(*, hparams, length, start_token=None, batch_size=None, conte
                 output
             ],
             shape_invariants=[
-                tf.TensorShape(model.past_shape(hparams=hparams, batch_size=batch_size)),
+                tf.TensorShape(Transformer.past_shape(hparams=hparams, batch_size=batch_size)),
                 tf.TensorShape([batch_size, None]),
                 tf.TensorShape([batch_size, None]),
             ],

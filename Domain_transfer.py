@@ -57,20 +57,8 @@ def create_domain_dict(encoder_path, domain_dict):
            keys = bytearray([byte_decoder[c] for c in keys]).decode('utf-8', errors='replace')
            if sub_text == keys or sub_text.lower()==keys or \
               (" " + sub_text==keys) or (" " + sub_text.lower()==keys):
+              # dict {k:v}
               reduced_dict[index_seq] = keys
   
    return reduced_dict
   
-   #domain dictionary
-#    domain_dict = ["I", "You",  "My",  "They",  "It",  "Am", "Are", "Need", "Feel", "Is",  "Hungry",  
-#                "Help", "Tired", "Not", "How", "Okay", "Very", "Thirsty", "Comfortable", "Right",
-#                "Please", "Hope", "Clean", "Glasses", "Nurse", "Closer", "Bring", "What", "Where", 
-#                "Tell", "That", "Going", "Music", "Like", "Outside", "Do", "Have", "Faith", 
-#                "Success", "Coming", "Good", "Bad", "Here", "Family", "Hello", "Goodbye", 
-#                "Computer", "Yes", "Up", "No"]
-
-
-
-
-
-

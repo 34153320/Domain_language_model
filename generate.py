@@ -42,6 +42,10 @@ def sample_sequence(*, hparams, length, start_token=None, batch_size=None, conte
             'presents': presents,
         }
 
+    """
+       For domain transfer, the general langauage model maintains the structure. 
+       Change the final softmax to adapte to specific domain knowledge.
+    """
     with tf.name_scope('sample_sequence'):
         def body(past, prev, output):
             next_outputs = step(hparams, prev, past=past)

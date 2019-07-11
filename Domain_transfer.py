@@ -120,6 +120,7 @@ def create_encoder(models_dir, domain_dict):
     with open(models_dir + 'vocab.bpe', 'r', encoding="utf-8") as read_file:
          bpe_data = read_file.read()
     
+    # get domain_encoder
     reduce_encoder = {}
     byte_decoder = byte_decoder()
     for sub_text in domain_dict:
@@ -129,6 +130,9 @@ def create_encoder(models_dir, domain_dict):
               (" " + sub_text==keys) or (" " + sub_text.lower()==keys):
               # dict {k:v}
               reduced_encoder[keys] = index_seq
+     
+     # get domain bpe: excluding out-vocabulary gram
+    bpe_merges = [tuple(merge_str.split()) for merge_str in bpe_data.split('\n')[1:-1]]
     
               
     return Encoder(

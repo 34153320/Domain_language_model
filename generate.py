@@ -1,9 +1,16 @@
 import tensorflow as tf
 import Transformer
+from domain_transfer import create_domain_dict
 
 """
    Written by Pengfei Sun. Part of the codes are borrowed from openai/GPT-2.
 """
+domain_dict = ["I", "You",  "My",  "They",  "It",  "Am", "Are", "Need", "Feel", "Is",  "Hungry",  
+               "Help", "Tired", "Not", "How", "Okay", "Very", "Thirsty", "Comfortable", "Right",
+               "Please", "Hope", "Clean", "Glasses", "Nurse", "Closer", "Bring", "What", "Where", 
+               "Tell", "That", "Going", "Music", "Like", "Outside", "Do", "Have", "Faith", 
+               "Success", "Coming", "Good", "Bad", "Here", "Family", "Hello", "Goodbye", 
+               "Computer", "Yes", "Up", "No"]
 
 def top_k_logits(logits, k):
     if k == 0:
@@ -24,18 +31,27 @@ def top_k_logits(logits, k):
        lambda: _top_k(),
     )
 
-def sample_sequence(*, hparams, length, start_token=None, batch_size=None, context=None, temperature=1, top_k=0):
+create_domain_dict(encoder_path, domain_dict)
+
+def sample_sequence(*, hparams, length, reduced_dict_index, 
+                    start_token=None, batch_size=None, context=None, 
+                    temperature=1, top_k=0):
     if start_token is None:
         assert context is not None, 'Specify exactly one of start_token and context!'
     else:
         assert context is None, 'Specify exactly one of start_token and context!'
         context = tf.fill([batch_size, 1], start_token)
-
+      
+    
+    # mask dict is too large
+    # dict_mask = np.zeros((hparams.n_vocab, hparams.n_vocab))
+   
     def step(hparams, tokens, past=None):
         lm_output = Transformer.model(hparams=hparams, X=tokens, past=past, reuse=tf.AUTO_REUSE)
 
         logits = lm_output['logits'][:, :, :hparams.n_vocab] # keep output dimension the same
-        # apply vocab_mask to get the limited 
+        # tf.gather collect the corresponding logits 
+ 
         logits = logits * dict_mask
         presents = lm_output['present']
         presents.set_shape(Transformer.past_shape(hparams=hparams, batch_size=batch_size))
@@ -87,5 +103,6 @@ def sample_sequence(*, hparams, length, start_token=None, batch_size=None, conte
         # tokens: outputs, curre_: current word choice, memo_: the previous word sequence.
         return tokens, curre_, memo_  
 
-
+   
+reduce_dict = create_domain_dict(encoder_path, domain_dict)
 

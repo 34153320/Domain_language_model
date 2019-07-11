@@ -2,7 +2,7 @@ import tensorflow as tf
 import Transformer
 
 """
-   Written by Pengfei Sun. Part of the codes are borrowed from xxxx.
+   Written by Pengfei Sun. Part of the codes are borrowed from openai/GPT-2.
 """
 
 def top_k_logits(logits, k):
@@ -34,7 +34,9 @@ def sample_sequence(*, hparams, length, start_token=None, batch_size=None, conte
     def step(hparams, tokens, past=None):
         lm_output = Transformer.model(hparams=hparams, X=tokens, past=past, reuse=tf.AUTO_REUSE)
 
-        logits = lm_output['logits'][:, :, :hparams.n_vocab]
+        logits = lm_output['logits'][:, :, :hparams.n_vocab] # keep output dimension the same
+        # apply vocab_mask to get the limited 
+        logits = logits * dict_mask
         presents = lm_output['present']
         presents.set_shape(Transformer.past_shape(hparams=hparams, batch_size=batch_size))
         return {
@@ -49,7 +51,11 @@ def sample_sequence(*, hparams, length, start_token=None, batch_size=None, conte
     with tf.name_scope('sample_sequence'):
         def body(past, prev, output):
             next_outputs = step(hparams, prev, past=past)
+            
+            
             logits = next_outputs['logits'][:, -1, :]  / tf.to_float(temperature)
+            
+            
             logits = top_k_logits(logits, k=top_k)
             samples = tf.multinomial(logits, num_samples=1, output_dtype=tf.int32)
             return [
@@ -78,7 +84,8 @@ def sample_sequence(*, hparams, length, start_token=None, batch_size=None, conte
             back_prop=False,
         )
 
-        return tokens, curre_, memo_
+        # tokens: outputs, curre_: current word choice, memo_: the previous word sequence.
+        return tokens, curre_, memo_  
 
 
 

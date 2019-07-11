@@ -31,8 +31,6 @@ def top_k_logits(logits, k):
        lambda: _top_k(),
     )
 
-create_domain_dict(encoder_path, domain_dict)
-
 def sample_sequence(*, hparams, length, reduced_dict_index, 
                     start_token=None, batch_size=None, context=None, 
                     temperature=1, top_k=0):
@@ -42,7 +40,6 @@ def sample_sequence(*, hparams, length, reduced_dict_index,
         assert context is None, 'Specify exactly one of start_token and context!'
         context = tf.fill([batch_size, 1], start_token)
       
-    
     # mask dict is too large
     # dict_mask = np.zeros((hparams.n_vocab, hparams.n_vocab))
    
@@ -51,8 +48,8 @@ def sample_sequence(*, hparams, length, reduced_dict_index,
 
         logits = lm_output['logits'][:, :, :hparams.n_vocab] # keep output dimension the same
         # tf.gather collect the corresponding logits 
- 
-        logits = logits * dict_mask
+        logits = tf.gather(logits, reduced_dict_index)
+#         logits = logits * dict_mask
         presents = lm_output['present']
         presents.set_shape(Transformer.past_shape(hparams=hparams, batch_size=batch_size))
         return {
@@ -67,11 +64,7 @@ def sample_sequence(*, hparams, length, reduced_dict_index,
     with tf.name_scope('sample_sequence'):
         def body(past, prev, output):
             next_outputs = step(hparams, prev, past=past)
-            
-            
             logits = next_outputs['logits'][:, -1, :]  / tf.to_float(temperature)
-            
-            
             logits = top_k_logits(logits, k=top_k)
             samples = tf.multinomial(logits, num_samples=1, output_dtype=tf.int32)
             return [
@@ -81,6 +74,7 @@ def sample_sequence(*, hparams, length, reduced_dict_index,
             ]
 
         past, prev, output = body(None, context, context)
+      
         def cond(*args):
             return True
 
@@ -104,5 +98,5 @@ def sample_sequence(*, hparams, length, reduced_dict_index,
         return tokens, curre_, memo_  
 
    
-reduce_dict = create_domain_dict(encoder_path, domain_dict)
+# reduce_dict = create_domain_dict(encoder_path, domain_dict)
 

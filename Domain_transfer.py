@@ -6,6 +6,7 @@
 import tensorflow as tf
 from functools import lru_cache
 import json
+import re
 
 @lru_cache()
 def bytes_to_unicode():
@@ -43,13 +44,13 @@ def byte_decoder():
      return {v:k for k, v in bytes_to_unicode().items()}
     
 class Encoder:
-    def __init__(self, encoder, bpe_merges):
-        # bpe_merges : reduced version 
+    def __init__(self, encoder, bpe_ranks): # 
+        # bpe_ranks : reduced version from bpe_merges
         self.encoder = encoder
         self.decoder = {v:k for k, v in self.encoder.items()}
         self.byte_encoder = bytes_to_unicode()
         self.byte_decoder = byte_decoder()
-        self.bpe_ranks = dict(zip(bpe_merges, range(len(bpe_merges))))
+        
         self.cache = {}
         
         self.pat = re.compile(r"""'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+""")
@@ -130,14 +131,19 @@ def create_encoder(models_dir, domain_dict):
               (" " + sub_text==keys) or (" " + sub_text.lower()==keys):
               # dict {k:v}
               reduced_encoder[keys] = index_seq
+              
      
      # get domain bpe: excluding out-vocabulary gram
     bpe_merges = [tuple(merge_str.split()) for merge_str in bpe_data.split('\n')[1:-1]]
+     # by searching the bpe_merges to find provided dict, reversely get reduced bpe
+    
+    self.bpe_ranks = dict(zip(bpe_merges, range(len(bpe_merges))))
+    
     
               
     return Encoder(
          encoder    = reduced_encoder,  # using the reduced encoder dictionary
-         bpe_merges = bpe_merges, 
+         bpe_ranks = bpe_ranks, 
          )
     
   

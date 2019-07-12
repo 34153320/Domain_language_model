@@ -44,12 +44,16 @@ def byte_decoder():
      return {v:k for k, v in bytes_to_unicode().items()}
     
 class Encoder:
-    def __init__(self, encoder, bpe_ranks): # 
+    def __init__(self, encoder, bpe_dict=None): # 
         # bpe_ranks : reduced version from bpe_merges
         self.encoder = encoder
         self.decoder = {v:k for k, v in self.encoder.items()}
+        
         self.byte_encoder = bytes_to_unicode()
         self.byte_decoder = byte_decoder()
+        
+        if bpe_dict is not None:
+           self.bpe_pair = dict(zip(bpe_dict, range(len(bpe_dict))))
         
         self.cache = {}
         
@@ -97,29 +101,50 @@ class Encoder:
         return word
                      
     def encode(self, text):
-        bpe_tokens = []
-        for token in re.findall(self.pat, text):
-            token = ''.join(self.byte_encoder[b] for b in token.encode('utf-8'))
-            bpe_tokens.extend(self.encoder[bpe_token] for bpe_token in self.bpe(token).split(' '))
+        if bpe_dict is not None:
+           bpe_tokens = []
+           for token in re.findall(self.pat, text):
+               token = ''.join(self.byte_encoder[b] for b in token.encode('utf-8'))
+               bpe_tokens.extend(self.encoder[bpe_token] for bpe_token in self.bpe(token).split(' '))
+           return bpe_tokens
+        else: 
+           nbpe_tokens = []
+           if " " in text:
+              tokens = []
+              text_  = text.split()
+              tokens.append(text_[0])
+              for sub_str in text_[1:]:
+                  tokens.append(" " + sub_str)
+              nbpe_tokens.extend(self.encoder[bpe_token] for bpe_token in tokens)
+           else:
+              nbpe_tokens.append(self.encoder[text])
+           return nbpe_tokens
+        
             
-        return bpe_tokens
-            
-    def decode(self, tokens, decoder):
+    def decode(self, tokens, dict_index):
     """
        Input digit tokens index the word sequences. tokens: int
        decoder is the dictionary using index as key and word as the value.
     """
      #  byte_encoder = bytes_to_unicode()
-       byte_decoder = byte_decoder()
-       text = ''.join(decoder[token] for token in tokens)
-       text = bytearray([byte_decoder[c] for c in text]).decode('utf-8', errors="replace")
+       text = ''.join(self.decoder[token] for token in tokens)
+     # text = ''.join([self.decoder[dict_index[token]] for token in tokens])     
+       text = bytearray([self.byte_decoder[c] for c in text]).decode('utf-8', errors="replace")
        return text 
+      
+def global_domain(global_dict, domain_voc):
+    """
+       Translating domain vocabulary by global dict index.
+    """
+    
 
-def create_encoder(models_dir, domain_dict):
-    with open(models_dir + 'encoder.json', 'r') as read_file:
+def create_encoder(model_path, domain_dict):
+    
+    with open(model_path + 'encoder.json', 'r') as read_file:
          complete_encoder = json.load(read_file)
-    with open(models_dir + 'vocab.bpe', 'r', encoding="utf-8") as read_file:
+    with open(model_path + 'vocab.bpe', 'r', encoding="utf-8") as read_file:
          bpe_data = read_file.read()
+    bpe_dict = [tuple(str_.split()) for str_ in bpe_data.split('\n')[1:-1]]
     
     # get domain_encoder
     reduce_encoder = {}
@@ -139,8 +164,6 @@ def create_encoder(models_dir, domain_dict):
     
     self.bpe_ranks = dict(zip(bpe_merges, range(len(bpe_merges))))
     
-    
-              
     return Encoder(
          encoder    = reduced_encoder,  # using the reduced encoder dictionary
          bpe_ranks = bpe_ranks, 
